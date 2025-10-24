@@ -1,0 +1,16 @@
+{
+  "name": "library-clean-architecture-test",
+  "version": "1.0.0",
+  "description": "Clean Architecture test project for library management system",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"No tests yet\""
+  },
+  "keywords": ["clean-architecture", "typescript", "library"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
