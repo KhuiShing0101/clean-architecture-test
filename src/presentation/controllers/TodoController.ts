@@ -2,18 +2,18 @@
  * Todo Controller
  * Presentation layer - Handles HTTP requests
  *
- * NOTE: This has an intentional Clean Architecture violation for testing
+ * ✅ Fixed: Now uses dependency injection properly
  */
 
 import { CreateTodoUseCase } from '../../application/usecases/CreateTodoUseCase';
-import { InMemoryTodoRepository } from '../../infrastructure/repositories/InMemoryTodoRepository';
+import { ITodoRepository } from '../../domain/repositories/ITodoRepository';
 
 export class TodoController {
+  constructor(private readonly todoRepository: ITodoRepository) {}
+
   async createTodo(request: { title: string; description: string }): Promise<any> {
-    // ❌ VIOLATION: Direct instantiation of infrastructure class in presentation layer
-    // Should use dependency injection instead
-    const repository = new InMemoryTodoRepository();
-    const useCase = new CreateTodoUseCase(repository);
+    // ✅ Use injected repository through interface
+    const useCase = new CreateTodoUseCase(this.todoRepository);
 
     try {
       const result = await useCase.execute({
