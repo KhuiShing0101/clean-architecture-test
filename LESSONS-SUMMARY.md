@@ -344,25 +344,38 @@ export { todoController, userController, bookController };
 - Automatic cascade notifications
 - Event handlers
 
+### Lesson 6 → Testing & Quality
+- Testing pyramid (70/20/10)
+- Unit testing all layers
+- Integration testing flows
+- 80%+ test coverage
+- Refactoring patterns
+- Performance optimization
+- Best practices
+
 ---
 
 ## Progression Table
 
-| Aspect | Lesson 1 | Lesson 2 | Lesson 3 | Lesson 4 | Lesson 5 |
-|--------|----------|----------|----------|----------|----------|
-| **Entities** | 1 (Todo) | 1 (User) | 3 (User+Book+Todo) | 3 (User+Book+Todo) | 4 (+ Reservation) ⭐ |
-| **Value Objects** | 0 | 1 (UserId) | 2 (UserId, BookId) | 2 (UserId, BookId) | 3 (+ ReservationId) ⭐ |
-| **Domain Services** | 0 | 0 | 1 (BorrowBookService) | 1 (BorrowBookService) | 3 (+ ReservationQueue, EventPublisher) ⭐ |
-| **Use Cases** | 1 | 1 | 2 | 3 (+ ReturnBook) | 5 (+ Reserve, Cancel) ⭐ |
-| **Domain Events** | No | No | No | No | Yes (4 events) ⭐ |
-| **Event Handlers** | No | No | No | No | Yes (BookAvailableHandler) ⭐ |
-| **Complexity** | Simple | Medium | High | Very High | Extremely High ⭐ |
-| **Coupling** | Direct | Direct | Direct | Direct | Event-driven (loose) ⭐ |
-| **Queue Management** | No | No | No | No | Yes (FIFO) ⭐ |
-| **State Changes** | Single | Single | Multi-entity | Multi-entity | Multi-entity + Events ⭐ |
-| **Business Rules** | Basic | Rich | Complex | Advanced | Advanced + Async ⭐ |
-| **Time-Based Logic** | No | No | Yes (overdue) | Yes (fees) | Yes (expiration) ⭐ |
-| **Score Range** | 85-100 | 95-100 | 95-100 | 95-100 | 95-100 |
+| Aspect | Lesson 1 | Lesson 2 | Lesson 3 | Lesson 4 | Lesson 5 | Lesson 6 |
+|--------|----------|----------|----------|----------|----------|----------|
+| **Entities** | 1 (Todo) | 1 (User) | 3 (User+Book+Todo) | 3 (User+Book+Todo) | 4 (+ Reservation) | 4 (Same) |
+| **Value Objects** | 0 | 1 (UserId) | 2 (UserId, BookId) | 2 (UserId, BookId) | 3 (+ ReservationId) | 3 (Same) |
+| **Domain Services** | 0 | 0 | 1 (BorrowBookService) | 1 (BorrowBookService) | 3 (+ Queue, Publisher) | 3 (Same) |
+| **Use Cases** | 1 | 1 | 2 | 3 (+ ReturnBook) | 5 (+ Reserve, Cancel) | 5 (Same) |
+| **Domain Events** | No | No | No | No | Yes (4 events) | Yes (4 events) |
+| **Event Handlers** | No | No | No | No | Yes (1 handler) | Yes (1 handler) |
+| **Test Coverage** | None | None | None | None | None | 80%+ ⭐ |
+| **Unit Tests** | No | No | No | No | No | Yes (70%) ⭐ |
+| **Integration Tests** | No | No | No | No | No | Yes (20%) ⭐ |
+| **E2E Tests** | No | No | No | No | No | Yes (10%) ⭐ |
+| **Refactoring** | No | No | No | No | No | Yes ⭐ |
+| **Complexity** | Simple | Medium | High | Very High | Extremely High | Extremely High |
+| **Coupling** | Direct | Direct | Direct | Direct | Event-driven | Event-driven |
+| **Queue Management** | No | No | No | No | Yes (FIFO) | Yes (FIFO) |
+| **State Changes** | Single | Single | Multi-entity | Multi-entity | Multi + Events | Multi + Events |
+| **Business Rules** | Basic | Rich | Complex | Advanced | Advanced + Async | Advanced + Tested ⭐ |
+| **Score Range** | 85-100 | 95-100 | 95-100 | 95-100 | 95-100 | 95-100 |
 
 ---
 
@@ -424,24 +437,31 @@ src/
 ---
 
 **Total Implementation:**
-- **12 Entities/Value Objects** (Todo, User, Book, Reservation + 3 VOs)
+- **12 Entities/Value Objects** (Todo, User, Book, Reservation + VOs)
 - **3 Domain Services** ⭐ (BorrowBookService, ReservationQueueService, DomainEventPublisher)
-- **9 Use Cases** (+ ReserveBook, CancelReservation in Lesson 5)
+- **9 Use Cases** (Create, Borrow, Return, Reserve, Cancel)
 - **4 Domain Events** ⭐ (BookReserved, BookAvailable, ReservationReady, ReservationExpired)
 - **1 Event Handler** ⭐ (BookAvailableHandler)
 - **4 Repository Interfaces**
 - **4 Repository Implementations**
-- **4 Controllers** (+ ReservationController in Lesson 5)
+- **4 Controllers** (Todo, User, Book, Reservation)
 - **1 Composition Root** with Event Handler Initialization
+- **Comprehensive Test Suite** ⭐ (Lesson 6)
+  - Unit Tests (70%+ of test suite)
+  - Integration Tests (20%+ of test suite)
+  - E2E Tests (10%+ of test suite)
+  - 80%+ Code Coverage
 
 **Expected Scores:**
 - Lesson 1: 85-100
 - Lesson 2: 95-100
 - Lesson 3: 95-100
 - Lesson 4: 95-100
-- Lesson 5: 95-100 ⭐
+- Lesson 5: 95-100
+- Lesson 6: 95-100 ⭐
 
 All lessons pass with **≥60 score and 0 ERROR violations**.
+Lesson 6 adds **80%+ test coverage** as quality metric.
 
 ---
 
@@ -651,3 +671,279 @@ class BookAvailableHandler {
 - Each handler handles one event type
 - Use cases focus on their core logic
 - Event publisher manages subscriptions
+
+---
+
+## Lesson 6: Integration Testing and Refactoring
+
+**Core Concept:** Comprehensive testing strategies and code quality improvement
+
+### Key Concepts
+- **Testing Pyramid** - Balance unit, integration, and E2E tests
+- **Test Coverage** - Achieve 80%+ coverage on business logic
+- **Unit Testing** - Test entities, services, and use cases in isolation
+- **Integration Testing** - Test component interactions
+- **Mocking & Stubbing** - Isolate units under test
+- **Refactoring Patterns** - Improve code structure without changing behavior
+- **Performance Optimization** - Identify and resolve bottlenecks
+
+### Testing Strategy (70/20/10 Rule)
+```
+   /\
+  /E2E\        10% - Few, slow, expensive (complete flows)
+ /------\
+/Integr.\     20% - Medium speed (multi-component)
+/--------\
+/ Unit    \   70% - Many, fast, cheap (isolated units)
+/__________\
+```
+
+### What Gets Tested
+
+**Domain Layer (Highest Priority):**
+- ✅ Entity business logic and validation
+- ✅ Value object validation rules
+- ✅ Domain service coordination
+- ✅ Event publishing logic
+- ✅ Immutability guarantees
+
+**Application Layer:**
+- ✅ Use case orchestration
+- ✅ Error handling
+- ✅ Event handler behavior
+- ✅ DTO transformations
+
+**Infrastructure Layer (Lower Priority):**
+- ⚠️ Repository implementations (often simple)
+- ⚠️ In-memory storage operations
+
+**Integration Tests:**
+- ✅ Complete user flows (borrow → return)
+- ✅ Event-driven workflows
+- ✅ Multi-component interactions
+- ✅ Transaction boundaries
+
+### Example Tests
+
+#### Entity Unit Test
+```typescript
+describe('Reservation Entity', () => {
+  it('creates reservation with ACTIVE status', () => {
+    const reservation = Reservation.create(userId, bookId);
+
+    expect(reservation.status).toBe(ReservationStatus.ACTIVE);
+    expect(reservation.expiresAt).toBeNull();
+  });
+
+  it('sets 3-day expiration when marked as ready', () => {
+    const reservation = Reservation.create(userId, bookId);
+    const ready = reservation.markAsReady();
+
+    expect(ready.status).toBe(ReservationStatus.READY);
+
+    const expectedExpiry = new Date();
+    expectedExpiry.setDate(expectedExpiry.getDate() + 3);
+    expect(ready.expiresAt!.getDate()).toBe(expectedExpiry.getDate());
+  });
+
+  it('maintains immutability on state changes', () => {
+    const original = Reservation.create(userId, bookId);
+    const ready = original.markAsReady();
+
+    expect(original.status).toBe(ReservationStatus.ACTIVE);
+    expect(ready.status).toBe(ReservationStatus.READY);
+    expect(original).not.toBe(ready);
+  });
+});
+```
+
+#### Domain Service Test with Mocks
+```typescript
+describe('BorrowBookService', () => {
+  let service: BorrowBookService;
+  let mockUserRepo: jest.Mocked<IUserRepository>;
+  let mockBookRepo: jest.Mocked<IBookRepository>;
+
+  beforeEach(() => {
+    mockUserRepo = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      // ... other methods
+    };
+
+    mockBookRepo = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      // ... other methods
+    };
+
+    service = new BorrowBookService(mockUserRepo, mockBookRepo);
+  });
+
+  it('saves both user and book when borrowing succeeds', async () => {
+    const user = User.create('John', 'john@example.com');
+    const book = Book.create('Test', 'Author', '1234567890123');
+
+    await service.execute(user, book);
+
+    expect(mockUserRepo.save).toHaveBeenCalledTimes(1);
+    expect(mockBookRepo.save).toHaveBeenCalledTimes(1);
+    expect(mockUserRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ currentBorrowCount: 1 })
+    );
+  });
+
+  it('does not save when user is not eligible', async () => {
+    const suspendedUser = User.create('John', 'john@example.com').suspend();
+    const book = Book.create('Test', 'Author', '1234567890123');
+
+    const result = await service.execute(suspendedUser, book);
+
+    expect(result.success).toBe(false);
+    expect(mockUserRepo.save).not.toHaveBeenCalled();
+    expect(mockBookRepo.save).not.toHaveBeenCalled();
+  });
+});
+```
+
+#### Integration Test (Complete Flow)
+```typescript
+describe('Book Borrowing Flow (Integration)', () => {
+  it('complete flow: create → borrow → return', async () => {
+    const userRepo = new InMemoryUserRepository();
+    const bookRepo = new InMemoryBookRepository();
+    const userController = new UserController(userRepo);
+    const bookController = new BookController(bookRepo, userRepo);
+
+    // 1. Create user
+    const user = await userController.createUser({
+      name: 'Alice',
+      email: 'alice@example.com',
+    });
+    expect(user.status).toBe('success');
+
+    // 2. Create book
+    const book = await bookController.createBook({
+      title: 'Test Book',
+      author: 'Author',
+      isbn: '9780123456789',
+    });
+    expect(book.status).toBe('success');
+
+    // 3. Borrow book
+    const borrow = await bookController.borrowBook({
+      userId: user.data.id,
+      bookId: book.data.id,
+    });
+    expect(borrow.status).toBe('success');
+    expect(borrow.data.user.currentBorrowCount).toBe(1);
+
+    // 4. Return book
+    const returned = await bookController.returnBook({
+      userId: user.data.id,
+      bookId: book.data.id,
+    });
+    expect(returned.status).toBe('success');
+    expect(returned.data.user.currentBorrowCount).toBe(0);
+  });
+});
+```
+
+### Refactoring Patterns Applied
+
+**1. Extract Common Validation**
+- EmailValidator utility class
+- Shared validation logic across entities
+
+**2. Introduce Result Object**
+- Consistent error handling pattern
+- `Result<T>` wrapper with success/failure states
+
+**3. Base Use Case Pattern**
+- Shared entity finding logic
+- `findUserOrFail()` and `findBookOrFail()` helpers
+
+**4. Batch Operations**
+- Process multiple items in single transaction
+- Reduce database round-trips
+
+### Performance Optimizations
+
+**1. Query Optimization**
+- Avoid N+1 queries with eager loading
+- Use repository methods that fetch related data
+
+**2. Caching**
+- Reuse service instances in handlers
+- Cache frequently accessed data
+
+**3. Batch Operations**
+- Save multiple entities in single operation
+- Process collections efficiently
+
+### Test Coverage Goals
+
+```
+Target: 80%+ overall coverage
+
+Priority Areas:
+✅ Domain Entities: 95%+
+✅ Domain Services: 90%+
+✅ Use Cases: 90%+
+✅ Event System: 85%+
+⚠️ Repositories: 70%+ (often simple CRUD)
+⚠️ Controllers: 70%+ (thin layer)
+```
+
+### Testing Best Practices
+
+**1. AAA Pattern (Arrange-Act-Assert)**
+```typescript
+test('example', () => {
+  // Arrange - Set up test data
+  const user = User.create('John', 'john@example.com');
+
+  // Act - Execute the behavior
+  const borrowed = user.borrowBook();
+
+  // Assert - Verify the outcome
+  expect(borrowed.currentBorrowCount).toBe(1);
+});
+```
+
+**2. Test One Thing Per Test**
+- Single assertion focus
+- Clear failure messages
+- Easy to maintain
+
+**3. Descriptive Names**
+- Explain what is being tested
+- Include expected behavior
+- Mention conditions
+
+**4. Test Edge Cases**
+- Boundary conditions
+- Error scenarios
+- Invalid inputs
+
+### Key Benefits of Lesson 6
+
+**1. Confidence**
+- High test coverage ensures correctness
+- Catch regressions early
+- Safe refactoring
+
+**2. Documentation**
+- Tests show how to use components
+- Examples of correct behavior
+- Living documentation
+
+**3. Design Feedback**
+- Hard to test = bad design
+- Tests drive better architecture
+- Encourage loose coupling
+
+**4. Maintainability**
+- Easier to change code
+- Refactoring is safe
+- Code quality improves
