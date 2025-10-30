@@ -17,6 +17,7 @@ export interface BorrowBookResult {
   success: boolean;
   updatedUser?: User;
   updatedBook?: Book;
+  overdueFee?: number;
   error?: string;
 }
 
@@ -74,6 +75,7 @@ export class BorrowBookService {
   /**
    * Domain service to handle book return
    * Coordinates state changes across User and Book entities
+   * Applies overdue fees based on business rules
    */
   async returnBook(user: User, book: Book): Promise<BorrowBookResult> {
     // Validate book is borrowed by this user
@@ -85,19 +87,16 @@ export class BorrowBookService {
     }
 
     try {
-      // Calculate overdue fees if applicable
-      let updatedUser = user.returnBook();
-      if (book.isOverdue()) {
-        const overdueDays = book.getOverdueDays();
-        const feePerDay = 100; // ¥100 per day
-        const overdueFee = overdueDays * feePerDay;
-        updatedUser = updatedUser.addOverdueFee(overdueFee);
-      }
+      // Calculate overdue fee using Book's domain logic
+      const overdueFee = book.calculateOverdueFee();
 
-      // Update book state
+      // Update user state with calculated fee (immutable)
+      const updatedUser = user.returnBook(overdueFee);
+
+      // Update book state (immutable)
       const updatedBook = book.returnBook();
 
-      // Persist changes
+      // Persist changes to both aggregates
       await this.userRepository.save(updatedUser);
       await this.bookRepository.save(updatedBook);
 
@@ -105,6 +104,7 @@ export class BorrowBookService {
         success: true,
         updatedUser,
         updatedBook,
+        overdueFee, // Return fee for presentation layer
       };
     } catch (error) {
       return {

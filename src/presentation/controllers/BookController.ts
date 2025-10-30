@@ -7,6 +7,7 @@
 
 import { CreateBookUseCase } from '../../application/usecases/CreateBookUseCase';
 import { BorrowBookUseCase } from '../../application/usecases/BorrowBookUseCase';
+import { ReturnBookUseCase } from '../../application/usecases/ReturnBookUseCase';
 import { IBookRepository } from '../../domain/repositories/IBookRepository';
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
 
@@ -61,6 +62,38 @@ export class BookController {
         message: result.message,
         data: result.success
           ? {
+              user: result.user,
+              book: result.book,
+            }
+          : undefined,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async returnBook(request: { userId: string; bookId: string }): Promise<any> {
+    // ✅ Use injected repositories through interfaces
+    const useCase = new ReturnBookUseCase(
+      this.userRepository,
+      this.bookRepository
+    );
+
+    try {
+      const result = await useCase.execute({
+        userId: request.userId,
+        bookId: request.bookId,
+      });
+
+      return {
+        status: result.success ? 'success' : 'error',
+        message: result.message,
+        data: result.success
+          ? {
+              overdueFee: result.overdueFee,
               user: result.user,
               book: result.book,
             }

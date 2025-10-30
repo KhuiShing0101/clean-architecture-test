@@ -148,30 +148,68 @@ export class Book {
   }
 
   /**
-   * Check if book is overdue (borrowed more than 14 days ago)
+   * Get total days the book has been borrowed
    */
-  isOverdue(): boolean {
+  getDaysBorrowed(): number {
     if (this.status !== BookStatus.BORROWED || !this.borrowedAt) {
-      return false;
-    }
-
-    const daysBorrowed = Math.floor(
-      (Date.now() - this.borrowedAt.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return daysBorrowed > 14;
-  }
-
-  /**
-   * Calculate overdue days (0 if not overdue)
-   */
-  getOverdueDays(): number {
-    if (!this.isOverdue()) {
       return 0;
     }
 
-    const daysBorrowed = Math.floor(
-      (Date.now() - this.borrowedAt!.getTime()) / (1000 * 60 * 60 * 24)
+    return Math.floor(
+      (Date.now() - this.borrowedAt.getTime()) / (1000 * 60 * 60 * 24)
     );
-    return daysBorrowed - 14;
+  }
+
+  /**
+   * Check if book is overdue (borrowed more than 14 days ago)
+   */
+  isOverdue(): boolean {
+    return this.getDaysBorrowed() > 14;
+  }
+
+  /**
+   * Calculate overdue days beyond the 14-day limit
+   * Returns 0 if not overdue
+   */
+  getOverdueDays(): number {
+    const daysBorrowed = this.getDaysBorrowed();
+    const dueDate = 14; // 14-day borrowing period
+
+    if (daysBorrowed <= dueDate) {
+      return 0;
+    }
+
+    return daysBorrowed - dueDate;
+  }
+
+  /**
+   * Calculate overdue fee based on business rules
+   * - ¥10 per day after grace period
+   * - First 3 days overdue are free (grace period)
+   * - Maximum fee capped at ¥1,000
+   */
+  calculateOverdueFee(): number {
+    const overdueDays = this.getOverdueDays();
+
+    // No fee if not overdue
+    if (overdueDays === 0) {
+      return 0;
+    }
+
+    // Grace period: first 3 days are free
+    const GRACE_PERIOD = 3;
+    const FEE_PER_DAY = 10; // ¥10 per day
+    const MAX_FEE = 1000; // ¥1,000 maximum
+
+    if (overdueDays <= GRACE_PERIOD) {
+      return 0;
+    }
+
+    // Calculate fee after grace period
+    const chargeableDays = overdueDays - GRACE_PERIOD;
+    const calculatedFee = chargeableDays * FEE_PER_DAY;
+
+    // Apply maximum cap
+    return Math.min(calculatedFee, MAX_FEE);
   }
 }
