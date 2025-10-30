@@ -336,22 +336,33 @@ export { todoController, userController, bookController };
 - Edge case handling
 - Dedicated use cases
 
+### Lesson 5 → Event-Driven Architecture
+- Domain events
+- Observer pattern (Publisher/Subscriber)
+- FIFO queue management
+- Loose coupling via events
+- Automatic cascade notifications
+- Event handlers
+
 ---
 
 ## Progression Table
 
-| Aspect | Lesson 1 | Lesson 2 | Lesson 3 | Lesson 4 |
-|--------|----------|----------|----------|----------|
-| **Entities** | 1 (Todo) | 1 (User) | 3 (User+Book+Todo) | 3 (User+Book+Todo) |
-| **Value Objects** | 0 | 1 (UserId) | 2 (UserId, BookId) | 2 (UserId, BookId) |
-| **Domain Services** | 0 | 0 | 1 (BorrowBookService) ⭐ | 1 (BorrowBookService) ⭐ |
-| **Use Cases** | 1 | 1 | 2 | 3 (+ ReturnBook) ⭐ |
-| **Complexity** | Simple | Medium | High | Very High ⭐ |
-| **State Changes** | Single | Single | Multi-entity | Multi-entity |
-| **Business Rules** | Basic | Rich | Complex | Advanced ⭐ |
-| **Time-Based Logic** | No | No | Yes (overdue) | Yes (fees) ⭐ |
-| **Fee Calculation** | No | No | Simple | Complex ⭐ |
-| **Score Range** | 85-100 | 95-100 | 95-100 | 95-100 |
+| Aspect | Lesson 1 | Lesson 2 | Lesson 3 | Lesson 4 | Lesson 5 |
+|--------|----------|----------|----------|----------|----------|
+| **Entities** | 1 (Todo) | 1 (User) | 3 (User+Book+Todo) | 3 (User+Book+Todo) | 4 (+ Reservation) ⭐ |
+| **Value Objects** | 0 | 1 (UserId) | 2 (UserId, BookId) | 2 (UserId, BookId) | 3 (+ ReservationId) ⭐ |
+| **Domain Services** | 0 | 0 | 1 (BorrowBookService) | 1 (BorrowBookService) | 3 (+ ReservationQueue, EventPublisher) ⭐ |
+| **Use Cases** | 1 | 1 | 2 | 3 (+ ReturnBook) | 5 (+ Reserve, Cancel) ⭐ |
+| **Domain Events** | No | No | No | No | Yes (4 events) ⭐ |
+| **Event Handlers** | No | No | No | No | Yes (BookAvailableHandler) ⭐ |
+| **Complexity** | Simple | Medium | High | Very High | Extremely High ⭐ |
+| **Coupling** | Direct | Direct | Direct | Direct | Event-driven (loose) ⭐ |
+| **Queue Management** | No | No | No | No | Yes (FIFO) ⭐ |
+| **State Changes** | Single | Single | Multi-entity | Multi-entity | Multi-entity + Events ⭐ |
+| **Business Rules** | Basic | Rich | Complex | Advanced | Advanced + Async ⭐ |
+| **Time-Based Logic** | No | No | Yes (overdue) | Yes (fees) | Yes (expiration) ⭐ |
+| **Score Range** | 85-100 | 95-100 | 95-100 | 95-100 | 95-100 |
 
 ---
 
@@ -378,7 +389,11 @@ src/
 │   ├── CreateUserUseCase.ts
 │   ├── CreateBookUseCase.ts
 │   ├── BorrowBookUseCase.ts     # Lesson 3 ⭐
-│   └── ReturnBookUseCase.ts     # Lesson 4 ⭐
+│   ├── ReturnBookUseCase.ts     # Lesson 4 ⭐
+│   ├── ReserveBookUseCase.ts    # Lesson 5 ⭐
+│   └── CancelReservationUseCase.ts # Lesson 5 ⭐
+├── application/handlers/
+│   └── BookAvailableHandler.ts  # Lesson 5 ⭐
 ├── infrastructure/repositories/
 │   ├── InMemoryTodoRepository.ts
 │   ├── InMemoryUserRepository.ts
@@ -409,19 +424,22 @@ src/
 ---
 
 **Total Implementation:**
-- **9 Entities/Value Objects**
-- **1 Domain Service** ⭐ (BorrowBookService)
-- **7 Use Cases** (+ ReturnBookUseCase in Lesson 4)
-- **3 Repository Interfaces**
-- **3 Repository Implementations**
-- **3 Controllers**
-- **1 Composition Root**
+- **12 Entities/Value Objects** (Todo, User, Book, Reservation + 3 VOs)
+- **3 Domain Services** ⭐ (BorrowBookService, ReservationQueueService, DomainEventPublisher)
+- **9 Use Cases** (+ ReserveBook, CancelReservation in Lesson 5)
+- **4 Domain Events** ⭐ (BookReserved, BookAvailable, ReservationReady, ReservationExpired)
+- **1 Event Handler** ⭐ (BookAvailableHandler)
+- **4 Repository Interfaces**
+- **4 Repository Implementations**
+- **4 Controllers** (+ ReservationController in Lesson 5)
+- **1 Composition Root** with Event Handler Initialization
 
 **Expected Scores:**
 - Lesson 1: 85-100
 - Lesson 2: 95-100
 - Lesson 3: 95-100
-- Lesson 4: 95-100 ⭐
+- Lesson 4: 95-100
+- Lesson 5: 95-100 ⭐
 
 All lessons pass with **≥60 score and 0 ERROR violations**.
 
@@ -449,3 +467,187 @@ All lessons pass with **≥60 score and 0 ERROR violations**.
 ✅ Extremely overdue → Capped at ¥1,000
 ✅ Book not borrowed → Error
 ✅ Wrong user → Ownership error
+
+---
+
+## Lesson 5: Domain Events and Reservation System
+
+**Core Concept:** Event-driven architecture and loose coupling through domain events
+
+### Key Files
+- `Reservation.ts` - **NEW:** Reservation entity with expiration ⭐
+- `ReservationId.ts` - **NEW:** Reservation ID value object ⭐
+- **Domain Events:**
+  - `IDomainEvent.ts` - Base event interface ⭐
+  - `BookReservedEvent.ts` - Book reserved ⭐
+  - `BookAvailableEvent.ts` - Book available ⭐
+  - `ReservationReadyEvent.ts` - Reservation ready ⭐
+  - `ReservationExpiredEvent.ts` - Reservation expired ⭐
+- **`DomainEventPublisher.ts`** ⭐ **NEW: Event bus (Singleton)**
+- **`ReservationQueueService.ts`** ⭐ **NEW: FIFO queue management**
+- `IReservationRepository.ts` - Repository interface
+- `InMemoryReservationRepository.ts` - Implementation
+- **`ReserveBookUseCase.ts`** ⭐ **NEW USE CASE**
+- **`CancelReservationUseCase.ts`** ⭐ **NEW USE CASE**
+- **`BookAvailableHandler.ts`** ⭐ **NEW: Event handler**
+- `ReturnBookUseCase.ts` - Updated: Publish events ⭐
+- `ReservationController.ts` - NEW controller
+- `main.ts` - Updated with event handling demo
+
+### Key Principles
+- ✅ **Domain Events** - Represent important domain occurrences
+- ✅ **Event-Driven Architecture** - Components communicate via events
+- ✅ **Observer Pattern** - Publisher/Subscriber for loose coupling
+- ✅ **FIFO Queue Management** - Fair ordering for reservations
+- ✅ **3-Day Hold Period** - Time-limited reservation availability
+- ✅ **Automatic Expiration** - Background processing of expired reservations
+- ✅ **Cascade Notifications** - Next user notified automatically
+- ✅ **Loose Coupling** - Use cases don't know about reservation system
+
+### Domain Event Flow
+```typescript
+1. User returns book
+   ↓
+2. ReturnBookUseCase publishes BookAvailableEvent
+   ↓
+3. DomainEventPublisher notifies all subscribers
+   ↓
+4. BookAvailableHandler receives event
+   ↓
+5. ReservationQueueService gets next in queue (FIFO)
+   ↓
+6. Reservation marked as READY (3-day countdown starts)
+   ↓
+7. ReservationReadyEvent published
+   ↓
+8. User notified: "Book is available! You have 3 days"
+```
+
+### Event Publisher Pattern (Observer)
+```typescript
+// Singleton event bus
+class DomainEventPublisher {
+  private static instance: DomainEventPublisher;
+  private handlers: Map<string, EventHandler[]>;
+
+  subscribe(eventType: string, handler: EventHandler) {
+    this.handlers.get(eventType).push(handler);
+  }
+
+  async publish(event: IDomainEvent) {
+    const handlers = this.handlers.get(event.eventType);
+    for (const handler of handlers) {
+      await handler(event);
+    }
+  }
+}
+
+// Usage in use case
+const event = new BookAvailableEvent(bookId);
+await DomainEventPublisher.getInstance().publish(event);
+```
+
+### FIFO Queue Management
+```typescript
+class ReservationQueueService {
+  async getNextInQueue(bookId: BookId): Reservation | null {
+    const activeReservations =
+      await this.repo.findActiveByBook(bookId);
+
+    if (activeReservations.length === 0) return null;
+
+    // FIFO: earliest createdAt first
+    activeReservations.sort((a, b) =>
+      a.createdAt.getTime() - b.createdAt.getTime()
+    );
+
+    return activeReservations[0]; // First in line
+  }
+
+  async notifyNextInQueue(bookId: BookId) {
+    const next = await this.getNextInQueue(bookId);
+    if (!next) return;
+
+    // Mark as ready (starts 3-day countdown)
+    const ready = next.markAsReady();
+    await this.repo.save(ready);
+
+    // Publish notification event
+    const event = new ReservationReadyEvent(...);
+    await publisher.publish(event);
+  }
+}
+```
+
+### Reservation Lifecycle
+```
+┌──────────┐
+│  ACTIVE  │ ← User reserves unavailable book
+│  (Queue) │    Waiting in FIFO queue
+└────┬─────┘
+     │ Book becomes available
+     ↓
+┌──────────┐
+│  READY   │ ← User's turn! 3-day countdown starts
+│ (3 days) │    Can borrow now
+└────┬─────┘
+     │
+     ├─→ User borrows → FULFILLED ✅
+     │
+     └─→ 3 days pass → EXPIRED ❌
+                      → Next user notified
+```
+
+### Loose Coupling Benefit
+```typescript
+// ❌ BAD: Tight coupling
+class ReturnBookUseCase {
+  async execute(input) {
+    await this.borrowService.returnBook(user, book);
+
+    // ❌ Direct dependency on reservation system
+    const reservationService = new ReservationService();
+    await reservationService.notifyNext(book.id);
+  }
+}
+
+// ✅ GOOD: Loose coupling via events
+class ReturnBookUseCase {
+  async execute(input) {
+    await this.borrowService.returnBook(user, book);
+
+    // ✅ Just publish event, handlers respond independently
+    const event = new BookAvailableEvent(book.id);
+    await publisher.publish(event);
+  }
+}
+
+// Separate handler (can add more without changing use case)
+class BookAvailableHandler {
+  async handle(event: BookAvailableEvent) {
+    await this.queueService.notifyNextInQueue(event.bookId);
+  }
+}
+```
+
+### Key Architectural Benefits
+
+**1. Decoupling**
+- ReturnBookUseCase doesn't know about reservations
+- Easy to add new event handlers
+- No circular dependencies
+
+**2. Extensibility**
+- Add email notifications → New handler
+- Add logging → New handler
+- Add metrics → New handler
+
+**3. Testability**
+- Test use cases without reservation system
+- Mock event publisher
+- Test handlers independently
+
+**4. Single Responsibility**
+- Each handler handles one event type
+- Use cases focus on their core logic
+- Event publisher manages subscriptions

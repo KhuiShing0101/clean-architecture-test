@@ -8,19 +8,31 @@
 import { TodoController } from './presentation/controllers/TodoController';
 import { UserController } from './presentation/controllers/UserController';
 import { BookController } from './presentation/controllers/BookController';
+import { ReservationController } from './presentation/controllers/ReservationController';
 import { InMemoryTodoRepository } from './infrastructure/repositories/InMemoryTodoRepository';
 import { InMemoryUserRepository } from './infrastructure/repositories/InMemoryUserRepository';
 import { InMemoryBookRepository } from './infrastructure/repositories/InMemoryBookRepository';
+import { InMemoryReservationRepository } from './infrastructure/repositories/InMemoryReservationRepository';
+import { BookAvailableHandler } from './application/handlers/BookAvailableHandler';
 
 // Initialize repositories (Infrastructure layer)
 const todoRepository = new InMemoryTodoRepository();
 const userRepository = new InMemoryUserRepository();
 const bookRepository = new InMemoryBookRepository();
+const reservationRepository = new InMemoryReservationRepository();
 
 // Inject dependencies into controllers (Presentation layer)
 const todoController = new TodoController(todoRepository);
 const userController = new UserController(userRepository);
 const bookController = new BookController(bookRepository, userRepository);
+const reservationController = new ReservationController(
+  userRepository,
+  bookRepository,
+  reservationRepository
+);
+
+// LESSON 5: Initialize event handlers
+const bookAvailableHandler = new BookAvailableHandler(reservationRepository);
 
 // Example usage
 async function main() {
@@ -126,12 +138,104 @@ async function demonstrateLesson4() {
   console.log('\nFormula: min((overdueDays - 3) × ¥10, ¥1,000)\n');
 }
 
+/**
+ * LESSON 5 DEMONSTRATION: Reservation System with Domain Events
+ */
+async function demonstrateLesson5() {
+  console.log('\n=== LESSON 5: Reservation System & Domain Events ===\n');
+
+  // Create users
+  const user1 = await userController.createUser({
+    name: 'Alice Johnson',
+    email: 'alice@example.com',
+  });
+
+  const user2 = await userController.createUser({
+    name: 'Bob Smith',
+    email: 'bob@example.com',
+  });
+
+  const user3 = await userController.createUser({
+    name: 'Charlie Brown',
+    email: 'charlie@example.com',
+  });
+
+  // Create a book
+  const book = await bookController.createBook({
+    title: 'Domain-Driven Design',
+    author: 'Eric Evans',
+    isbn: '9780321125217',
+  });
+
+  console.log('\n📚 Book created:', book.data.title);
+
+  // User 1 borrows the book
+  console.log('\n--- User 1 borrows the book ---');
+  const borrowResult = await bookController.borrowBook({
+    userId: user1.data.id,
+    bookId: book.data.id,
+  });
+  console.log('✅', borrowResult.message);
+
+  // User 2 tries to borrow but book is unavailable, so reserves it
+  console.log('\n--- User 2 reserves the book ---');
+  const reserve1 = await reservationController.reserveBook({
+    userId: user2.data.id,
+    bookId: book.data.id,
+  });
+  console.log('✅', reserve1.message);
+  console.log('   Queue position:', reserve1.data.queuePosition);
+
+  // User 3 also reserves
+  console.log('\n--- User 3 reserves the book ---');
+  const reserve2 = await reservationController.reserveBook({
+    userId: user3.data.id,
+    bookId: book.data.id,
+  });
+  console.log('✅', reserve2.message);
+  console.log('   Queue position:', reserve2.data.queuePosition);
+
+  // User 1 returns the book
+  console.log('\n--- User 1 returns the book ---');
+  console.log('⚡ This will trigger BookAvailableEvent!');
+  const returnResult = await bookController.returnBook({
+    userId: user1.data.id,
+    bookId: book.data.id,
+  });
+  console.log('✅', returnResult.message);
+
+  console.log('\n--- Event Flow Complete ---');
+  console.log('1. BookAvailableEvent published');
+  console.log('2. BookAvailableHandler received event');
+  console.log('3. Next user in queue (User 2) was notified');
+  console.log('4. User 2 has 3 days to borrow the book');
+
+  // Check User 2's reservations
+  console.log('\n--- Check User 2 reservations ---');
+  const user2Reservations = await reservationController.getUserReservations({
+    userId: user2.data.id,
+  });
+  const activeReservation = user2Reservations.data[0];
+  console.log('Reservation status:', activeReservation.status);
+  console.log('Remaining days:', activeReservation.remainingDays);
+  console.log('Expires at:', activeReservation.expiresAt);
+
+  console.log('\n🎉 Lesson 5 Complete: Domain Events & Queue Management!');
+  console.log('\nKey Concepts Demonstrated:');
+  console.log('✅ Domain Events (BookAvailableEvent)');
+  console.log('✅ Event Publisher/Subscriber Pattern');
+  console.log('✅ FIFO Queue Management');
+  console.log('✅ Automatic Notification System');
+  console.log('✅ Loose Coupling via Events');
+}
+
 // Export for use in other parts of the application
-export { todoController, userController, bookController };
+export { todoController, userController, bookController, reservationController };
 
 // Run if executed directly
 if (require.main === module) {
   main()
     .then(() => demonstrateLesson4())
+    .then(() => demonstrateLesson5())
     .catch(console.error);
 }

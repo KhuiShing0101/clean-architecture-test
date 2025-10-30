@@ -9,6 +9,8 @@ import { BorrowBookService } from '../../domain/services/BorrowBookService';
 import { UserId } from '../../domain/valueobjects/UserId';
 import { BookId } from '../../domain/valueobjects/BookId';
 import { BookStatus } from '../../domain/entities/Book';
+import { BookAvailableEvent } from '../../domain/events/BookAvailableEvent';
+import { DomainEventPublisher } from '../../domain/services/DomainEventPublisher';
 
 export interface ReturnBookInput {
   userId: string;
@@ -83,6 +85,10 @@ export class ReturnBookUseCase {
         message: result.error || 'Failed to return book',
       };
     }
+
+    // Publish BookAvailableEvent for reservation system
+    const event = new BookAvailableEvent(book.id);
+    await DomainEventPublisher.getInstance().publish(event);
 
     // Build success response with fee information
     const feeMessage =
