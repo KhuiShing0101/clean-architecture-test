@@ -79,10 +79,11 @@ export class BookController {
   }
 
   async returnBook(request: { userId: string; bookId: string }): Promise<any> {
-    // ✅ Use injected repositories through interfaces
+    // ✅ Use injected repositories and domain service through interfaces
     const useCase = new ReturnBookUseCase(
       this.userRepository,
-      this.bookRepository
+      this.bookRepository,
+      this.borrowBookService
     );
 
     try {
