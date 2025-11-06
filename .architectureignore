@@ -1,0 +1,7 @@
+# Exclude from architecture linting
+node_modules/
+dist/
+build/
+.git/
+*.test.ts
+*.spec.ts
