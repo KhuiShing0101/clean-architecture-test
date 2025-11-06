@@ -16,12 +16,16 @@ import { InMemoryReservationRepository } from './infrastructure/repositories/InM
 import { BookAvailableHandler } from './application/handlers/BookAvailableHandler';
 import { ReservationQueueService } from './domain/services/ReservationQueueService';
 import { BorrowBookService } from './domain/services/BorrowBookService';
+import { EventBus } from './infrastructure/events/EventBus';
 
 // Initialize repositories (Infrastructure layer)
 const todoRepository = new InMemoryTodoRepository();
 const userRepository = new InMemoryUserRepository();
 const bookRepository = new InMemoryBookRepository();
 const reservationRepository = new InMemoryReservationRepository();
+
+// Initialize event bus (Infrastructure layer)
+const eventBus = new EventBus();
 
 // Initialize domain services (Domain layer)
 const reservationQueueService = new ReservationQueueService(reservationRepository);
@@ -33,7 +37,8 @@ const userController = new UserController(userRepository);
 const bookController = new BookController(
   bookRepository,
   userRepository,
-  borrowBookService
+  borrowBookService,
+  eventBus
 );
 const reservationController = new ReservationController(
   userRepository,
@@ -42,8 +47,11 @@ const reservationController = new ReservationController(
   reservationQueueService
 );
 
-// LESSON 5: Initialize event handlers
-const bookAvailableHandler = new BookAvailableHandler(reservationQueueService);
+// LESSON 5: Initialize event handlers with dependency injection
+const bookAvailableHandler = new BookAvailableHandler(
+  reservationQueueService,
+  eventBus
+);
 
 // Example usage
 async function main() {

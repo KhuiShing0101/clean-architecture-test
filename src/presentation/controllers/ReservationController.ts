@@ -9,6 +9,7 @@ import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { IBookRepository } from '../../domain/repositories/IBookRepository';
 import { IReservationRepository } from '../../domain/repositories/IReservationRepository';
 import { ReservationQueueService } from '../../domain/services/ReservationQueueService';
+import { UserId } from '../../domain/valueobjects/UserId';
 
 export class ReservationController {
   constructor(
@@ -84,7 +85,7 @@ export class ReservationController {
    */
   async getUserReservations(request: { userId: string }): Promise<any> {
     try {
-      const userId = require('../../domain/valueobjects/UserId').UserId.create(request.userId);
+      const userId = UserId.create(request.userId);
       const reservations = await this.reservationRepository.findByUser(userId);
 
       return {

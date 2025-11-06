@@ -5,6 +5,8 @@
 
 import { BookId } from '../valueobjects/BookId';
 import { UserId } from '../valueobjects/UserId';
+import { IDomainEvent } from '../events/IDomainEvent';
+import { BookAvailableEvent } from '../events/BookAvailableEvent';
 
 export enum BookStatus {
   AVAILABLE = 'available',
@@ -13,6 +15,8 @@ export enum BookStatus {
 }
 
 export class Book {
+  private domainEvents: IDomainEvent[] = [];
+
   private constructor(
     public readonly id: BookId,
     public readonly title: string,
@@ -91,13 +95,14 @@ export class Book {
   /**
    * Mark book as returned and available again
    * Returns a new Book instance (immutable)
+   * Raises BookAvailableEvent
    */
   returnBook(): Book {
     if (this.status !== BookStatus.BORROWED) {
       throw new Error('Only borrowed books can be returned');
     }
 
-    return new Book(
+    const returnedBook = new Book(
       this.id,
       this.title,
       this.author,
@@ -107,6 +112,11 @@ export class Book {
       null,
       this.createdAt
     );
+
+    // Raise domain event: book is now available
+    returnedBook.addDomainEvent(new BookAvailableEvent(this.id));
+
+    return returnedBook;
   }
 
   /**
@@ -211,5 +221,28 @@ export class Book {
 
     // Apply maximum cap
     return Math.min(calculatedFee, MAX_FEE);
+  }
+
+  /**
+   * Add a domain event to this entity
+   * Events are collected and published by the use case
+   */
+  private addDomainEvent(event: IDomainEvent): void {
+    this.domainEvents.push(event);
+  }
+
+  /**
+   * Get all domain events raised by this entity
+   * This allows the use case to retrieve and publish them
+   */
+  getDomainEvents(): IDomainEvent[] {
+    return [...this.domainEvents];
+  }
+
+  /**
+   * Clear domain events after they've been published
+   */
+  clearDomainEvents(): void {
+    this.domainEvents = [];
   }
 }

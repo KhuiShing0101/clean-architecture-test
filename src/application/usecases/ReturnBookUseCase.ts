@@ -9,8 +9,7 @@ import { BorrowBookService } from '../../domain/services/BorrowBookService';
 import { UserId } from '../../domain/valueobjects/UserId';
 import { BookId } from '../../domain/valueobjects/BookId';
 import { BookStatus } from '../../domain/entities/Book';
-import { BookAvailableEvent } from '../../domain/events/BookAvailableEvent';
-import { DomainEventPublisher } from '../../domain/services/DomainEventPublisher';
+import { IEventBus } from '../../domain/events/IEventBus';
 
 export interface ReturnBookInput {
   userId: string;
@@ -38,7 +37,8 @@ export class ReturnBookUseCase {
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly bookRepository: IBookRepository,
-    private readonly borrowService: BorrowBookService
+    private readonly borrowService: BorrowBookService,
+    private readonly eventBus: IEventBus
   ) {}
 
   async execute(input: ReturnBookInput): Promise<ReturnBookOutput> {
@@ -82,9 +82,16 @@ export class ReturnBookUseCase {
       };
     }
 
-    // Publish BookAvailableEvent for reservation system
-    const event = new BookAvailableEvent(book.id);
-    await DomainEventPublisher.getInstance().publish(event);
+    // Publish domain events raised by the book entity
+    const returnedBook = result.updatedBook!;
+    const domainEvents = returnedBook.getDomainEvents();
+
+    for (const event of domainEvents) {
+      await this.eventBus.publish(event);
+    }
+
+    // Clear events after publishing
+    returnedBook.clearDomainEvents();
 
     // Build success response with fee information
     const feeMessage =

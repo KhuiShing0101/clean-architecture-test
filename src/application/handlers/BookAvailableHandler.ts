@@ -5,14 +5,15 @@
 
 import { BookAvailableEvent } from '../../domain/events/BookAvailableEvent';
 import { ReservationQueueService } from '../../domain/services/ReservationQueueService';
-import { DomainEventPublisher } from '../../domain/services/DomainEventPublisher';
+import { IEventBus } from '../../domain/events/IEventBus';
 
 export class BookAvailableHandler {
   constructor(
-    private readonly queueService: ReservationQueueService
+    private readonly queueService: ReservationQueueService,
+    private readonly eventBus: IEventBus
   ) {
-    // Subscribe to BookAvailableEvent
-    DomainEventPublisher.getInstance().subscribe(
+    // Subscribe to BookAvailableEvent via injected event bus
+    this.eventBus.subscribe(
       'BookAvailable',
       (event) => this.handle(event as BookAvailableEvent)
     );
