@@ -14,6 +14,8 @@ import { InMemoryUserRepository } from './infrastructure/repositories/InMemoryUs
 import { InMemoryBookRepository } from './infrastructure/repositories/InMemoryBookRepository';
 import { InMemoryReservationRepository } from './infrastructure/repositories/InMemoryReservationRepository';
 import { BookAvailableHandler } from './application/handlers/BookAvailableHandler';
+import { ReservationQueueService } from './domain/services/ReservationQueueService';
+import { BorrowBookService } from './domain/services/BorrowBookService';
 
 // Initialize repositories (Infrastructure layer)
 const todoRepository = new InMemoryTodoRepository();
@@ -21,18 +23,27 @@ const userRepository = new InMemoryUserRepository();
 const bookRepository = new InMemoryBookRepository();
 const reservationRepository = new InMemoryReservationRepository();
 
+// Initialize domain services (Domain layer)
+const reservationQueueService = new ReservationQueueService(reservationRepository);
+const borrowBookService = new BorrowBookService(userRepository, bookRepository);
+
 // Inject dependencies into controllers (Presentation layer)
 const todoController = new TodoController(todoRepository);
 const userController = new UserController(userRepository);
-const bookController = new BookController(bookRepository, userRepository);
+const bookController = new BookController(
+  bookRepository,
+  userRepository,
+  borrowBookService
+);
 const reservationController = new ReservationController(
   userRepository,
   bookRepository,
-  reservationRepository
+  reservationRepository,
+  reservationQueueService
 );
 
 // LESSON 5: Initialize event handlers
-const bookAvailableHandler = new BookAvailableHandler(reservationRepository);
+const bookAvailableHandler = new BookAvailableHandler(reservationQueueService);
 
 // Example usage
 async function main() {

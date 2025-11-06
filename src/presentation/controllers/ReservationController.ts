@@ -8,12 +8,14 @@ import { CancelReservationUseCase } from '../../application/usecases/CancelReser
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { IBookRepository } from '../../domain/repositories/IBookRepository';
 import { IReservationRepository } from '../../domain/repositories/IReservationRepository';
+import { ReservationQueueService } from '../../domain/services/ReservationQueueService';
 
 export class ReservationController {
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly bookRepository: IBookRepository,
-    private readonly reservationRepository: IReservationRepository
+    private readonly reservationRepository: IReservationRepository,
+    private readonly reservationQueueService: ReservationQueueService
   ) {}
 
   /**
@@ -26,7 +28,8 @@ export class ReservationController {
     const useCase = new ReserveBookUseCase(
       this.userRepository,
       this.bookRepository,
-      this.reservationRepository
+      this.reservationRepository,
+      this.reservationQueueService
     );
 
     try {
@@ -54,7 +57,10 @@ export class ReservationController {
   async cancelReservation(request: {
     reservationId: string;
   }): Promise<any> {
-    const useCase = new CancelReservationUseCase(this.reservationRepository);
+    const useCase = new CancelReservationUseCase(
+      this.reservationRepository,
+      this.reservationQueueService
+    );
 
     try {
       const result = await useCase.execute({

@@ -27,15 +27,12 @@ export interface ReserveBookOutput {
 }
 
 export class ReserveBookUseCase {
-  private queueService: ReservationQueueService;
-
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly bookRepository: IBookRepository,
-    private readonly reservationRepository: IReservationRepository
-  ) {
-    this.queueService = new ReservationQueueService(reservationRepository);
-  }
+    private readonly reservationRepository: IReservationRepository,
+    private readonly queueService: ReservationQueueService
+  ) {}
 
   async execute(input: ReserveBookInput): Promise<ReserveBookOutput> {
     // Find user

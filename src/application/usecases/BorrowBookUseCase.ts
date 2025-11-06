@@ -31,15 +31,11 @@ export interface BorrowBookOutput {
 }
 
 export class BorrowBookUseCase {
-  private borrowService: BorrowBookService;
-
   constructor(
     private readonly userRepository: IUserRepository,
-    private readonly bookRepository: IBookRepository
-  ) {
-    // Initialize domain service with repositories
-    this.borrowService = new BorrowBookService(userRepository, bookRepository);
-  }
+    private readonly bookRepository: IBookRepository,
+    private readonly borrowService: BorrowBookService
+  ) {}
 
   async execute(input: BorrowBookInput): Promise<BorrowBookOutput> {
     // Find user
