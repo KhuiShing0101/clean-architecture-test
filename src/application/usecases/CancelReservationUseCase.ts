@@ -18,13 +18,10 @@ export interface CancelReservationOutput {
 }
 
 export class CancelReservationUseCase {
-  private queueService: ReservationQueueService;
-
   constructor(
-    private readonly reservationRepository: IReservationRepository
-  ) {
-    this.queueService = new ReservationQueueService(reservationRepository);
-  }
+    private readonly reservationRepository: IReservationRepository,
+    private readonly queueService: ReservationQueueService
+  ) {}
 
   async execute(input: CancelReservationInput): Promise<CancelReservationOutput> {
     // Find reservation

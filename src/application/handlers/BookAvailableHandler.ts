@@ -5,17 +5,12 @@
 
 import { BookAvailableEvent } from '../../domain/events/BookAvailableEvent';
 import { ReservationQueueService } from '../../domain/services/ReservationQueueService';
-import { IReservationRepository } from '../../domain/repositories/IReservationRepository';
 import { DomainEventPublisher } from '../../domain/services/DomainEventPublisher';
 
 export class BookAvailableHandler {
-  private queueService: ReservationQueueService;
-
   constructor(
-    private readonly reservationRepository: IReservationRepository
+    private readonly queueService: ReservationQueueService
   ) {
-    this.queueService = new ReservationQueueService(reservationRepository);
-
     // Subscribe to BookAvailableEvent
     DomainEventPublisher.getInstance().subscribe(
       'BookAvailable',

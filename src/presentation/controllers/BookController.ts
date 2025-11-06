@@ -10,11 +10,13 @@ import { BorrowBookUseCase } from '../../application/usecases/BorrowBookUseCase'
 import { ReturnBookUseCase } from '../../application/usecases/ReturnBookUseCase';
 import { IBookRepository } from '../../domain/repositories/IBookRepository';
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { BorrowBookService } from '../../domain/services/BorrowBookService';
 
 export class BookController {
   constructor(
     private readonly bookRepository: IBookRepository,
-    private readonly userRepository: IUserRepository
+    private readonly userRepository: IUserRepository,
+    private readonly borrowBookService: BorrowBookService
   ) {}
 
   async createBook(request: {
@@ -45,10 +47,11 @@ export class BookController {
   }
 
   async borrowBook(request: { userId: string; bookId: string }): Promise<any> {
-    // ✅ Use injected repositories through interfaces
+    // ✅ Use injected repositories and domain service through interfaces
     const useCase = new BorrowBookUseCase(
       this.userRepository,
-      this.bookRepository
+      this.bookRepository,
+      this.borrowBookService
     );
 
     try {
